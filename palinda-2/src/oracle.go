@@ -18,11 +18,29 @@ const (
 	prompt = "> "
 )
 
+var nonsense = []string{
+	"The moon is dark.",
+	"The sun is bright.",
+}
+
+var prophecies = []string{
+	"Tomorrow will be a good day.",
+	"The sun will rise in the east.",
+	"The moon will be full.",
+	"You will fail your MDI tenta.",
+}
+
 func main() {
 	fmt.Printf("Welcome to %s, the oracle at %s.\n", star, venue)
 	fmt.Println("Your questions will be answered in due time.")
 
-	questions := Oracle()
+	questions := make(chan string)
+	answers := make(chan string)
+
+	go questionReceiver(questions, answers)
+	go predictionGenerator(answers)
+	go answerPrinter(answers)
+
 	reader := bufio.NewReader(os.Stdin)
 	for {
 		fmt.Print(prompt)
@@ -36,44 +54,43 @@ func main() {
 	}
 }
 
-// Oracle returns a channel on which you can send your questions to the oracle.
-// You may send as many questions as you like on this channel, it never blocks.
-// The answers arrive on stdout, but only when the oracle so decides.
-// The oracle also prints sporadic prophecies to stdout even without being asked.
-func Oracle() chan<- string {
-	questions := make(chan string)
-	// TODO: Answer questions.
-	// TODO: Make prophecies.
-	// TODO: Print answers.
-	return questions
+func questionReceiver(questions <-chan string, answers chan<- string) {
+	for {
+		question := <-questions
+		answer := make(chan string)
+		go prophecy(question, answer)
+		answers <- <-answer
+	}
 }
 
-// This is the oracle's secret algorithm.
-// It waits for a while and then sends a message on the answer channel.
-// TODO: make it better.
+func predictionGenerator(answers chan<- string) {
+	for {
+		time.Sleep(time.Duration(10+rand.Intn(10)) * time.Second)
+		answers <- prophecies[rand.Intn(len(prophecies))]
+	}
+}
+
+func answerPrinter(answers <-chan string) {
+	for {
+		fmt.Println("\r" + <-answers)
+		fmt.Print(prompt)
+	}
+}
+
 func prophecy(question string, answer chan<- string) {
-	// Keep them waiting. Pythia, the original oracle at Delphi,
-	// only gave prophecies on the seventh day of each month.
 	time.Sleep(time.Duration(2+rand.Intn(3)) * time.Second)
 
-	// Find the longest word.
 	longestWord := ""
-	words := strings.Fields(question) // Fields extracts the words into a slice.
+	words := strings.Fields(question)
 	for _, w := range words {
 		if len(w) > len(longestWord) {
 			longestWord = w
 		}
 	}
 
-	// Cook up some pointless nonsense.
-	nonsense := []string{
-		"The moon is dark.",
-		"The sun is bright.",
-	}
 	answer <- longestWord + "... " + nonsense[rand.Intn(len(nonsense))]
 }
 
-func init() { // Functions called "init" are executed before the main function.
-	// Use new pseudo random numbers every time.
+func init() {
 	rand.Seed(time.Now().Unix())
 }
