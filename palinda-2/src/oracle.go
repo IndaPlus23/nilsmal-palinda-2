@@ -72,7 +72,12 @@ func predictionGenerator(answers chan<- string) {
 
 func answerPrinter(answers <-chan string) {
 	for {
-		fmt.Println("\r" + <-answers)
+		response := <-answers
+		for _, char := range response {
+			fmt.Print(string(char))
+			time.Sleep(50 * time.Millisecond) // Adjust the delay as needed
+		}
+		fmt.Println() // Print a newline after printing the complete response
 		fmt.Print(prompt)
 	}
 }
@@ -80,14 +85,20 @@ func answerPrinter(answers <-chan string) {
 func prophecy(question string, answer chan<- string) {
 	time.Sleep(time.Duration(2+rand.Intn(3)) * time.Second)
 
+
 	longestWord := ""
+
+	switch question {
+	case "What is the meaning of life?":
+		longestWord = "Ah, life!"
+	}
+
 	words := strings.Fields(question)
 	for _, w := range words {
 		if len(w) > len(longestWord) {
 			longestWord = w
 		}
 	}
-
 	answer <- longestWord + "... " + nonsense[rand.Intn(len(nonsense))]
 }
 
