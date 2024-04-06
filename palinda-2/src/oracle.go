@@ -75,9 +75,9 @@ func answerPrinter(answers <-chan string) {
 		response := <-answers
 		for _, char := range response {
 			fmt.Print(string(char))
-			time.Sleep(50 * time.Millisecond) // Adjust the delay as needed
+			time.Sleep(50 * time.Millisecond)
 		}
-		fmt.Println() // Print a newline after printing the complete response
+		fmt.Println()
 		fmt.Print(prompt)
 	}
 }
